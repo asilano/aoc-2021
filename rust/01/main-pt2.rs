@@ -10,22 +10,10 @@ fn main() {
                                   .map(|x| x.parse::<i32>().unwrap())
                                   .collect();
 
-  let mut increase_count = 0;
-  let mut last_depth: Option<i32> = None;
-
-  for three_depths in depths.windows(3) {
-    let depth_sum = three_depths.iter().sum();
-    match last_depth {
-      Some(x) => {
-        if x < depth_sum {
-          increase_count += 1;
-        }
-      }
-      None => {}
-    }
-
-    last_depth = Some(depth_sum);
-  }
+  let windows: Vec<i32> = depths.windows(3).map(|w| w.iter().sum()).collect();
+  let increase_count = windows.windows(2)
+                              .filter(|wind| wind[1] > wind[0])
+                              .count();
 
   println!("Increased {} times", increase_count);
 }

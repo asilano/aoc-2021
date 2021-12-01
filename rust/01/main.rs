@@ -6,24 +6,13 @@ fn input_string() -> String {
 
 fn main() {
   let input_str = input_string();
-  let depths_iter = input_str.split_whitespace();
+  let depths: Vec<i32> = input_str.split_whitespace()
+                                  .map(|x| x.parse::<i32>().unwrap())
+                                  .collect();
 
-  let mut increase_count = 0;
-  let mut last_depth: Option<i32> = None;
-
-  for depth in depths_iter {
-    let depth_i = depth.parse::<i32>().unwrap();
-    match last_depth {
-      Some(x) => {
-        if x < depth_i {
-          increase_count += 1;
-        }
-      }
-      None => {}
-    }
-
-    last_depth = Some(depth_i);
-  }
+  let increase_count = depths.windows(2)
+                             .filter(|wind| wind[1] > wind[0])
+                             .count();
 
   println!("Increased {} times", increase_count);
 }
