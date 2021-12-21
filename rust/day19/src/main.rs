@@ -25,7 +25,7 @@ fn rotations() -> [Array2<i32>; 24] {
         XR.clone(), XR.dot(&XR), XR.dot(&XR).dot(&XR),
         YR.clone(), YR.dot(&XR), YR.dot(&XR).dot(&XR), YR.dot(&XR).dot(&XR).dot(&XR),
         YR.dot(&YR), YR.dot(&YR).dot(&XR), YR.dot(&YR).dot(&XR).dot(&XR), YR.dot(&YR).dot(&XR).dot(&XR).dot(&XR),
-        YR.dot(&YR).dot(&YR), YR.dot(&YR) *&YR.dot(&XR), YR.dot(&YR) *&YR.dot(&XR).dot(&XR), YR.dot(&YR) *&YR.dot(&XR).dot(&XR).dot(&XR),
+        YR.dot(&YR).dot(&YR), YR.dot(&YR).dot(&YR).dot(&XR), YR.dot(&YR).dot(&YR).dot(&XR).dot(&XR), YR.dot(&YR).dot(&YR).dot(&XR).dot(&XR).dot(&XR),
         XR.dot(&YR), XR.dot(&YR).dot(&XR), XR.dot(&YR).dot(&XR).dot(&XR), XR.dot(&YR).dot(&XR).dot(&XR).dot(&XR),
         XR.dot(&XR).dot(&XR).dot(&YR), XR.dot(&XR).dot(&XR).dot(&YR).dot(&XR), XR.dot(&XR).dot(&XR).dot(&YR).dot(&XR).dot(&XR), XR.dot(&XR).dot(&XR).dot(&YR).dot(&XR).dot(&XR).dot(&XR)
     ]
@@ -87,6 +87,11 @@ fn make_offsets(one_sensed: &Vec<Array1<i32>>) -> Vec<Offset> {
 }
 
 fn combine_sensor_maps(sensed: &mut Vec<Vec<Array1<i32>>>, offsets: &mut Vec<Vec<Offset>>) {
+    let mut sensor_locations = Vec::<Vec<Array1<i32>>>::new();
+    for _ in 0..sensed.len() {
+        sensor_locations.push(vec![arr1(&[0,0,0])]);
+    }
+
     while sensed.len() > 1 {
         let mut keep_ix = None::<usize>;
         let mut rotate_ix = None::<usize>;
@@ -155,8 +160,26 @@ fn combine_sensor_maps(sensed: &mut Vec<Vec<Array1<i32>>>, offsets: &mut Vec<Vec
         offsets.remove(rotate_ix.unwrap());
         offsets[keep_ix.unwrap()] = make_offsets(&sensed[keep_ix.unwrap()]);
 
+        // Update the sensors in the rotating set as well and translate them _away_, before adding them to the fixed set
+        holding_vec.clear();
+        for sensor in sensor_locations[rotate_ix.unwrap()].iter() {
+            holding_vec.push(rotn_mx.dot(sensor) + &translate);
+        }
+        sensor_locations[keep_ix.unwrap()].append(&mut holding_vec);
+        sensor_locations.remove(rotate_ix.unwrap());
+
         println!("Moved {} into {}; latter now has {} elements", rotate_ix.unwrap(), keep_ix.unwrap(), sensed[keep_ix.unwrap()].len());
     }
+    println!("({}) - {:#?}", sensor_locations.len(), sensor_locations[0]);
+    let mut max_dist = 0;
+    let locs = &sensor_locations[0];
+    for x in 0..locs.len() {
+        for y in x+1..locs.len() {
+            let dist = (locs[x][0] - locs[y][0]).abs() + (locs[x][1] - locs[y][1]).abs() + (locs[x][2] - locs[y][2]).abs();
+            if dist > max_dist { max_dist = dist }
+        }
+    }
+    println!("Max manhattan: {}", max_dist);
 }
 
 fn main() {
@@ -166,5 +189,5 @@ fn main() {
 
     combine_sensor_maps(&mut sensed, &mut offsets);
     sensed[0].sort_by(|a,b| a.get(0).unwrap().cmp(b.get(0).unwrap()));
-    println!("{:#?}", sensed[0]);
+    //println!("{:#?}", sensed[0]);
 }
