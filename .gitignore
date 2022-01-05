@@ -11,3 +11,6 @@ Cargo.lock
 
 # Ignore VSCode artifacts
 .vscode/
+
+# Ignore MacOS files
+.DS_Store
